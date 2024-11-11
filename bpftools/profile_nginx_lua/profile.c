@@ -768,6 +768,7 @@ int main(int argc, char **argv)
 	};
 	struct syms_cache *syms_cache = NULL;
 	struct ksyms *ksyms = NULL;
+	struct perf_buffer *pb = NULL;
 	struct bpf_link *cpu_links[MAX_CPU_NR] = {};
 	struct bpf_link *uprobe_links[UPROBE_SIZE] = {};
 	struct profile_bpf *obj;
@@ -860,8 +861,8 @@ int main(int argc, char **argv)
 	lua_bt_map = init_lua_stack_map();
 	if (!lua_bt_map)
 		goto cleanup;
-	struct perf_buffer *pb = perf_buffer__new(bpf_map__fd(obj->maps.lua_event_output), PERF_BUFFER_PAGES,
-											  handle_lua_stack_event, handle_lua_stack_lost_events, NULL, NULL);
+	pb = perf_buffer__new(bpf_map__fd(obj->maps.lua_event_output), PERF_BUFFER_PAGES,
+									handle_lua_stack_event, handle_lua_stack_lost_events, NULL, NULL);
 	if (!pb)
 	{
 		err = -errno;
@@ -931,8 +932,10 @@ cleanup:
 	for (i = 0; i < UPROBE_SIZE; i++)
 		bpf_link__destroy(uprobe_links[i]);
 	profile_bpf__destroy(obj);
-	perf_buffer__free(pb);
-	syms_cache__free(syms_cache);
-	ksyms__free(ksyms);
+
+	if (pb) perf_buffer__free(pb);
+	if (syms_cache) syms_cache__free(syms_cache);
+	if (ksyms) ksyms__free(ksyms);
+
 	return err != 0;
 }
