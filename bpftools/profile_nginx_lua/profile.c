@@ -905,9 +905,13 @@ int main(int argc, char **argv)
 	 * We'll get sleep interrupted when someone presses Ctrl-C (which will
 	 * be "handled" with noop by sig_handler).
 	 */
-	// sleep(env.duration);
+	time_t start_time = time(NULL);
 	while (!exiting)
 	{
+		if (env.duration > 0 && (time(NULL) - start_time) >= env.duration) {
+			// printf("Terminating after %d seconds.\n", env.duration);
+			break;
+	    }
 		// print perf event to get stack trace
 		err = perf_buffer__poll(pb, PERF_POLL_TIMEOUT_MS);
 		if (err < 0 && err != -EINTR)
